@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RGBBackCoverTester"
+rootProject.name = "Mechanical-Wave-Tester"
 include(":app")
