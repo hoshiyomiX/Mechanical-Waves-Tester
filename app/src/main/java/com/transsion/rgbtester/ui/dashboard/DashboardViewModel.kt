@@ -14,49 +14,150 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val systemInfoReader = SystemInfoReader()
 
+    // Device Info
     private val _deviceInfo = MutableLiveData<SystemInfoReader.DeviceInfo>()
     val deviceInfo: LiveData<SystemInfoReader.DeviceInfo> = _deviceInfo
 
+    // LED Info
     private val _ledInfo = MutableLiveData<SystemInfoReader.LEDInfo>()
     val ledInfo: LiveData<SystemInfoReader.LEDInfo> = _ledInfo
 
-    private val _serviceStatus = MutableLiveData<ServiceStatusDisplay>()
-    val serviceStatus: LiveData<ServiceStatusDisplay> = _serviceStatus
+    // Init Services Info
+    private val _initServicesInfo = MutableLiveData<SystemInfoReader.InitServicesInfo>()
+    val initServicesInfo: LiveData<SystemInfoReader.InitServicesInfo> = _initServicesInfo
 
+    // HAL Info
+    private val _halInfo = MutableLiveData<SystemInfoReader.HALInfo>()
+    val halInfo: LiveData<SystemInfoReader.HALInfo> = _halInfo
+
+    // Driver Info
+    private val _driverInfo = MutableLiveData<SystemInfoReader.DriverInfo>()
+    val driverInfo: LiveData<SystemInfoReader.DriverInfo> = _driverInfo
+
+    // Libraries Info
+    private val _librariesInfo = MutableLiveData<SystemInfoReader.LibrariesInfo>()
+    val librariesInfo: LiveData<SystemInfoReader.LibrariesInfo> = _librariesInfo
+
+    // SELinux Info
+    private val _selinuxInfo = MutableLiveData<SystemInfoReader.SELinuxInfo>()
+    val selinuxInfo: LiveData<SystemInfoReader.SELinuxInfo> = _selinuxInfo
+
+    // Device Tree Info
+    private val _deviceTreeInfo = MutableLiveData<SystemInfoReader.DeviceTreeInfo>()
+    val deviceTreeInfo: LiveData<SystemInfoReader.DeviceTreeInfo> = _deviceTreeInfo
+
+    // Loading state
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    data class ServiceStatusDisplay(
-        val lightHal: String,
-        val tcLedService: String
-    )
+    // Error message
+    private val _errorMessage = MutableLiveData<String?>()
+    val errorMessage: LiveData<String?> = _errorMessage
 
     fun loadInfo() {
         viewModelScope.launch {
             _isLoading.value = true
-            
-            // Load device info
-            val deviceInfo = withContext(Dispatchers.IO) {
-                systemInfoReader.getDeviceInfo()
-            }
-            _deviceInfo.value = deviceInfo
+            _errorMessage.value = null
 
-            // Load LED info
-            val ledInfo = withContext(Dispatchers.IO) {
-                systemInfoReader.getLEDInfo()
-            }
-            _ledInfo.value = ledInfo
+            try {
+                // Load device info (basic info, no root needed for some parts)
+                val deviceInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getDeviceInfo()
+                }
+                _deviceInfo.value = deviceInfo
 
-            // Load service status
-            val serviceStatus = withContext(Dispatchers.IO) {
-                systemInfoReader.getServiceStatus()
+                // Load LED hardware info
+                val ledInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getLEDInfo()
+                }
+                _ledInfo.value = ledInfo
+
+                // Load init services info
+                val initServices = withContext(Dispatchers.IO) {
+                    systemInfoReader.getInitServicesInfo()
+                }
+                _initServicesInfo.value = initServices
+
+                // Load HAL info
+                val halInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getHALInfo()
+                }
+                _halInfo.value = halInfo
+
+                // Load driver info
+                val driverInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getDriverInfo()
+                }
+                _driverInfo.value = driverInfo
+
+                // Load libraries info
+                val librariesInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getLibrariesInfo()
+                }
+                _librariesInfo.value = librariesInfo
+
+                // Load SELinux info
+                val selinuxInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getSELinuxInfo()
+                }
+                _selinuxInfo.value = selinuxInfo
+
+                // Load Device Tree info
+                val deviceTreeInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getDeviceTreeInfo()
+                }
+                _deviceTreeInfo.value = deviceTreeInfo
+
+            } catch (e: Exception) {
+                _errorMessage.value = "Error loading info: ${e.message}"
             }
-            _serviceStatus.value = ServiceStatusDisplay(
-                lightHal = serviceStatus.lightHal,
-                tcLedService = serviceStatus.tcLedService
-            )
-            
+
             _isLoading.value = false
+        }
+    }
+
+    // Helper functions for UI formatting
+
+    fun getRomTypeDisplay(romType: SystemInfoReader.RomType): String {
+        return when (romType) {
+            SystemInfoReader.RomType.STOCK -> "Stock ROM"
+            SystemInfoReader.RomType.CUSTOM -> "Custom ROM ⚠️"
+            SystemInfoReader.RomType.UNKNOWN -> "Unknown"
+        }
+    }
+
+    fun getSELinuxModeDisplay(mode: String): String {
+        return when (mode.lowercase()) {
+            "enforcing" -> "Enforcing (Strict)"
+            "permissive" -> "Permissive ⚠️"
+            "disabled" -> "Disabled"
+            else -> mode
+        }
+    }
+
+    fun getDriverStatusDisplay(status: SystemInfoReader.DriverStatus): String {
+        return if (status.loaded) {
+            val version = status.version?.let { " v$it" } ?: ""
+            "${status.path ?: "Loaded"}$version"
+        } else {
+            "Not loaded ❌"
+        }
+    }
+
+    fun getServiceStatusText(status: String): String {
+        return when (status) {
+            "running" -> "✅ Running"
+            "stopped" -> "⏹️ Stopped"
+            "registered" -> "📋 Registered"
+            else -> "❌ Not found"
+        }
+    }
+
+    fun getHALStatusText(hal: SystemInfoReader.HALServiceStatus): String {
+        return if (hal.running) {
+            "✅ Running ${hal.pid?.let { "(PID: $it)" } ?: ""}"
+        } else {
+            "❌ Not running"
         }
     }
 }
