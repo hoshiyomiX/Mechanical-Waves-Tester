@@ -101,11 +101,37 @@
                     <TextView android:id="@+id/tvRomType" style="@style/InfoValue" android:textColor="#FFA500" />
                 </LinearLayout>
 
+                <LinearLayout style="@style/InfoRow">
+                    <TextView style="@style/InfoLabel" android:text="OTA Version:" />
+                    <TextView android:id="@+id/tvOtaVersion" style="@style/InfoValue" android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvStockProps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textColor="#808080"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvBuildFingerprint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="-"
+                    android:textColor="#606060"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
                 <TextView
                     android:id="@+id/tvKernel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="4dp"
                     android:text="-"
                     android:textColor="#808080"
                     android:textSize="11sp"
@@ -177,6 +203,11 @@
                     <TextView android:id="@+id/tvPdlcController" style="@style/InfoValue" />
                 </LinearLayout>
 
+                <LinearLayout style="@style/InfoRow">
+                    <TextView style="@style/InfoLabel" android:text="Power:" />
+                    <TextView android:id="@+id/tvPowerState" style="@style/InfoValue" android:textSize="11sp" />
+                </LinearLayout>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -218,6 +249,49 @@
                     android:text="Scanning..."
                     android:textColor="#B0B0B0"
                     android:textSize="12sp"
+                    android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- LED Attributes Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#2D2D2D"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📊 LED Attributes"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="#3D3D3D" />
+
+                <TextView
+                    android:id="@+id/tvLedAttributes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Loading..."
+                    android:textColor="#B0B0B0"
+                    android:textSize="11sp"
                     android:fontFamily="monospace" />
 
             </LinearLayout>
@@ -277,6 +351,44 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Service Analysis Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardServiceAnalysis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#1E3A5F"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Service Analysis"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvServiceAnalysis"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#B0C4DE"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- HAL Services Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -321,6 +433,26 @@
                     <TextView style="@style/InfoLabel" android:text="Transsion HAL:" />
                     <TextView android:id="@+id/tvTranssionHal" style="@style/InfoValue" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvHidlInterfaces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#808080"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/tvAidlInterfaces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textColor="#808080"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace" />
 
             </LinearLayout>
 
@@ -371,6 +503,23 @@
                     <TextView android:id="@+id/tvAw862Driver" style="@style/InfoValue" />
                 </LinearLayout>
 
+                <LinearLayout style="@style/InfoRow">
+                    <TextView style="@style/InfoLabel" android:text="I2C Bus:" />
+                    <TextView android:id="@+id/tvI2cBusStatus" style="@style/InfoValue" android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvGpioStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textColor="#606060"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="3"
+                    android:ellipsize="end" />
+
                 <TextView
                     android:id="@+id/tvModules"
                     android:layout_width="match_parent"
@@ -379,6 +528,28 @@
                     android:text="No LED modules detected"
                     android:textColor="#808080"
                     android:textSize="11sp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/tvKernelConfig"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#606060"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="10"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tvCmdlineParams"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textColor="#505050"
+                    android:textSize="10sp"
                     android:fontFamily="monospace" />
 
             </LinearLayout>
@@ -423,6 +594,17 @@
                     android:textColor="#B0B0B0"
                     android:textSize="11sp"
                     android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/tvMissingLibs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#FF9800"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:visibility="gone" />
 
             </LinearLayout>
 
@@ -484,6 +666,45 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- SELinux Denials Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSelinuxDenials"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#3D1A1A"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚠️ SELinux Denials"
+                    android:textColor="#FF6B6B"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelinuxDenials"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#FFB0B0"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Device Tree Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -528,6 +749,188 @@
                     <TextView style="@style/InfoLabel" android:text="Pinctrl:" />
                     <TextView android:id="@+id/tvDtPinctrl" style="@style/InfoValue" android:textSize="11sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvOverlays"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#808080"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/tvLedDts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textColor="#606060"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="5"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Vendor Info Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#2D2D2D"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📦 Vendor &amp; Partitions"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="#3D3D3D" />
+
+                <TextView
+                    android:id="@+id/tvVendorStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Checking..."
+                    android:textColor="#B0B0B0"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/tvVendorProps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#808080"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="8"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Missing Vendor Files Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardMissingVendorFiles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#3D2A1A"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚠️ Missing Vendor Files"
+                    android:textColor="#FFB06B"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvMissingVendorFiles"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#FFD0A0"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Kernel Info Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#2D2D2D"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🐧 Kernel Information"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="#3D3D3D" />
+
+                <TextView
+                    android:id="@+id/tvKernelVersion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="#B0B0B0"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="3"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tvInitramfs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textColor="#808080"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvCmdline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#606060"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:maxLines="5"
+                    android:ellipsize="end" />
 
             </LinearLayout>
 

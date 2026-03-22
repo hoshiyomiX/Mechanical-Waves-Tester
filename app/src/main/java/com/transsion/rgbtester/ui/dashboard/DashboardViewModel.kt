@@ -46,6 +46,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _deviceTreeInfo = MutableLiveData<SystemInfoReader.DeviceTreeInfo>()
     val deviceTreeInfo: LiveData<SystemInfoReader.DeviceTreeInfo> = _deviceTreeInfo
 
+    // Vendor Info
+    private val _vendorInfo = MutableLiveData<SystemInfoReader.VendorInfo>()
+    val vendorInfo: LiveData<SystemInfoReader.VendorInfo> = _vendorInfo
+
+    // Kernel Info
+    private val _kernelInfo = MutableLiveData<SystemInfoReader.KernelInfo>()
+    val kernelInfo: LiveData<SystemInfoReader.KernelInfo> = _kernelInfo
+
     // Loading state
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -108,6 +116,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 }
                 _deviceTreeInfo.value = deviceTreeInfo
 
+                // Load Vendor info
+                val vendorInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getVendorInfo()
+                }
+                _vendorInfo.value = vendorInfo
+
+                // Load Kernel info
+                val kernelInfo = withContext(Dispatchers.IO) {
+                    systemInfoReader.getKernelInfo()
+                }
+                _kernelInfo.value = kernelInfo
+
             } catch (e: Exception) {
                 _errorMessage.value = "Error loading info: ${e.message}"
             }
@@ -120,7 +140,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun getRomTypeDisplay(romType: SystemInfoReader.RomType): String {
         return when (romType) {
-            SystemInfoReader.RomType.STOCK -> "Stock ROM"
+            SystemInfoReader.RomType.STOCK -> "Stock ROM ✓"
             SystemInfoReader.RomType.CUSTOM -> "Custom ROM ⚠️"
             SystemInfoReader.RomType.UNKNOWN -> "Unknown"
         }
@@ -138,7 +158,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun getDriverStatusDisplay(status: SystemInfoReader.DriverStatus): String {
         return if (status.loaded) {
             val version = status.version?.let { " v$it" } ?: ""
-            "${status.path ?: "Loaded"}$version"
+            val state = status.initstate?.let { " [$it]" } ?: ""
+            "${status.path ?: "Loaded"}$version$state"
         } else {
             "Not loaded ❌"
         }
@@ -159,5 +180,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         } else {
             "❌ Not running"
         }
+    }
+
+    fun getVendorStatusDisplay(vendorInfo: SystemInfoReader.VendorInfo): String {
+        val status = StringBuilder()
+
+        if (!vendorInfo.vendorPartitionMounted) {
+            status.append("❌ Vendor partition not mounted\n")
+        } else {
+            status.append("✅ Vendor: ${vendorInfo.vendorPartitionType}\n")
+        }
+
+        if (!vendorInfo.odmPartitionMounted) {
+            status.append("⚠️ ODM partition not mounted\n")
+        }
+
+        if (!vendorInfo.productPartitionMounted) {
+            status.append("⚠️ Product partition not mounted\n")
+        }
+
+        if (vendorInfo.missingVendorFiles.isNotEmpty()) {
+            status.append("Missing files: ${vendorInfo.missingVendorFiles.size}\n")
+        }
+
+        return status.toString().trim()
     }
 }

@@ -50,8 +50,19 @@ class DashboardFragment : Fragment() {
             binding.tvPlatform.text = info.platform
             binding.tvAndroidVersion.text = info.androidVersion
             binding.tvBuildType.text = info.buildType
-            binding.tvKernel.text = info.kernelVersion.take(60) + if (info.kernelVersion.length > 60) "..." else ""
+            binding.tvKernel.text = info.kernelVersion.take(80) + if (info.kernelVersion.length > 80) "..." else ""
             binding.tvRomType.text = viewModel.getRomTypeDisplay(info.romType)
+            binding.tvBuildFingerprint.text = info.buildFingerprint.take(60) + "..."
+            binding.tvOtaVersion.text = info.otaVersion.ifEmpty { "N/A" }
+
+            // Stock props match indicator
+            if (info.stockPropsMatch) {
+                binding.tvStockProps.text = "✅ Stock properties detected"
+                binding.tvStockProps.setTextColor(requireContext().getColor(R.color.colorSuccess))
+            } else {
+                binding.tvStockProps.text = "⚠️ Stock properties not matched"
+                binding.tvStockProps.setTextColor(requireContext().getColor(R.color.colorWarning))
+            }
 
             // Show ROM banner for custom ROMs
             if (info.romType == SystemInfoReader.RomType.CUSTOM) {
@@ -70,6 +81,14 @@ class DashboardFragment : Fragment() {
             binding.tvLedController.text = info.controller
             binding.tvRgbDriver.text = info.rgbDriver
             binding.tvPdlcController.text = info.pdlcController
+            binding.tvPowerState.text = info.powerState
+
+            // Color code LED type
+            if (info.ledType.contains("White LED Only", ignoreCase = true)) {
+                binding.tvLedType.setTextColor(requireContext().getColor(R.color.colorWarning))
+            } else if (info.ledType.contains("RGB", ignoreCase = true)) {
+                binding.tvLedType.setTextColor(requireContext().getColor(R.color.colorSuccess))
+            }
 
             // I2C Devices
             if (info.i2cDevices.isNotEmpty()) {
@@ -87,6 +106,16 @@ class DashboardFragment : Fragment() {
             } else {
                 binding.tvSysfsPaths.text = "No LED sysfs paths found"
             }
+
+            // LED Attributes
+            if (info.ledAttributes.isNotEmpty()) {
+                val attrText = info.ledAttributes.entries.take(10).joinToString("\n") { (k, v) ->
+                    "• $k: $v"
+                }
+                binding.tvLedAttributes.text = attrText
+            } else {
+                binding.tvLedAttributes.text = "No LED attributes found"
+            }
         }
 
         // Init Services Info
@@ -96,16 +125,28 @@ class DashboardFragment : Fragment() {
             info.services.forEach { service ->
                 val statusText = viewModel.getServiceStatusText(service.status)
                 val pidText = service.pid?.let { " (PID: $it)" } ?: ""
-                servicesText.append("• ${service.name}: $statusText$pidText\n")
+                val rcText = service.rcFile?.let { " [${it.substringAfterLast("/")}]" } ?: ""
+                servicesText.append("• ${service.name}: $statusText$pidText$rcText\n")
             }
 
             binding.tvServices.text = servicesText.toString().trimEnd()
 
             // RC Files
             if (info.rcFilesFound.isNotEmpty()) {
-                binding.tvRcFiles.text = "RC Files:\n${info.rcFilesFound.joinToString("\n")}"
+                val rcText = info.rcFilesFound.joinToString("\n") { rc ->
+                    "• ${rc.path} (${rc.content.take(50)}...)"
+                }
+                binding.tvRcFiles.text = "RC Files:\n$rcText"
             } else {
                 binding.tvRcFiles.text = "No LED-related RC files found"
+            }
+
+            // Service Analysis
+            if (info.serviceAnalysis.isNotEmpty()) {
+                binding.tvServiceAnalysis.text = info.serviceAnalysis
+                binding.cardServiceAnalysis.visibility = View.VISIBLE
+            } else {
+                binding.cardServiceAnalysis.visibility = View.GONE
             }
         }
 
@@ -118,26 +159,76 @@ class DashboardFragment : Fragment() {
             // Color coding
             setColorByStatus(binding.tvLightHal, info.lightHal.running)
             setColorByStatus(binding.tvTranssionHal, info.transsionHal.running)
+
+            // HIDL Interfaces
+            if (info.hidlInterfaces.isNotEmpty()) {
+                val hidlText = info.hidlInterfaces.joinToString("\n") { iface ->
+                    val status = if (iface.available) "✅" else "❌"
+                    "• $status ${iface.name} v${iface.version}"
+                }
+                binding.tvHidlInterfaces.text = "HIDL Interfaces:\n$hidlText"
+            } else {
+                binding.tvHidlInterfaces.text = "No HIDL interfaces detected"
+            }
+
+            // AIDL Interfaces
+            if (info.aidlInterfaces.isNotEmpty()) {
+                val aidlText = info.aidlInterfaces.joinToString("\n") { iface ->
+                    val status = if (iface.available) "✅" else "❌"
+                    "• $status ${iface.name}"
+                }
+                binding.tvAidlInterfaces.text = "AIDL Interfaces:\n$aidlText"
+            } else {
+                binding.tvAidlInterfaces.text = "No AIDL interfaces detected"
+            }
         }
 
         // Driver Info
         viewModel.driverInfo.observe(viewLifecycleOwner) { info ->
-            binding.tvHk32Driver.text = if (info.hk32Driver.loaded) "✅ Loaded" else "❌ Not loaded"
-            binding.tvAw20144Driver.text = if (info.aw20144Driver.loaded) "✅ Loaded" else "❌ Not loaded"
-            binding.tvAw862Driver.text = if (info.aw862Driver.loaded) "✅ Loaded" else "❌ Not loaded"
+            binding.tvHk32Driver.text = if (info.hk32Driver.loaded) "✅ Loaded ${info.hk32Driver.initstate ?: ""}" else "❌ Not loaded"
+            binding.tvAw20144Driver.text = if (info.aw20144Driver.loaded) "✅ Loaded ${info.aw20144Driver.initstate ?: ""}" else "❌ Not loaded"
+            binding.tvAw862Driver.text = if (info.aw862Driver.loaded) "✅ Loaded ${info.aw862Driver.initstate ?: ""}" else "❌ Not loaded"
 
             setColorByStatus(binding.tvHk32Driver, info.hk32Driver.loaded)
             setColorByStatus(binding.tvAw20144Driver, info.aw20144Driver.loaded)
             setColorByStatus(binding.tvAw862Driver, info.aw862Driver.loaded)
 
+            // I2C & GPIO Status
+            binding.tvGpioStatus.text = info.gpioStatus.take(100)
+            binding.tvI2cBusStatus.text = info.i2cStatus
+
             // Modules
             if (info.modules.isNotEmpty()) {
                 val modulesText = info.modules.joinToString("\n") { mod ->
-                    "• ${mod.name} (${mod.size} bytes, used by ${mod.usedBy})"
+                    "• ${mod.name} (${mod.size} bytes) [${mod.state}]"
                 }
                 binding.tvModules.text = "Loaded Modules:\n$modulesText"
             } else {
                 binding.tvModules.text = "No LED-related kernel modules loaded"
+            }
+
+            // Kernel Config
+            if (info.kernelConfig.isNotEmpty()) {
+                val configText = info.kernelConfig.entries.take(10).joinToString("\n") { (k, v) ->
+                    "• $k=$v"
+                }
+                binding.tvKernelConfig.text = "Kernel Config:\n$configText"
+            } else {
+                binding.tvKernelConfig.text = "Kernel config not available"
+            }
+
+            // Cmdline params
+            if (info.cmdlineParams.isNotEmpty()) {
+                val ledParams = info.cmdlineParams.filterKeys { 
+                    it.contains("led", ignoreCase = true) || 
+                    it.contains("i2c", ignoreCase = true) ||
+                    it.contains("gpio", ignoreCase = true)
+                }
+                if (ledParams.isNotEmpty()) {
+                    binding.tvCmdlineParams.text = "LED-related cmdline: ${ledParams.entries.joinToString(", ") { "${it.key}=${it.value}" }}"
+                } else {
+                    binding.tvCmdlineParams.text = ""
+                }
             }
         }
 
@@ -154,10 +245,17 @@ class DashboardFragment : Fragment() {
                 libsText.append("No LED-specific libraries found\n")
             }
 
-            libsText.append("\nSystem: ${info.systemLibs.size} libs\n")
-            libsText.append("Vendor: ${info.vendorLibs.size} libs")
+            libsText.append("\nVendor Partition: ${info.vendorPartitionStatus}")
 
             binding.tvLibraries.text = libsText.toString()
+
+            // Missing libs
+            if (info.missingLibs.isNotEmpty()) {
+                binding.tvMissingLibs.text = "⚠️ Missing:\n${info.missingLibs.joinToString("\n") { "• $it" }}"
+                binding.tvMissingLibs.visibility = View.VISIBLE
+            } else {
+                binding.tvMissingLibs.visibility = View.GONE
+            }
         }
 
         // SELinux Info
@@ -178,6 +276,17 @@ class DashboardFragment : Fragment() {
             } else {
                 binding.tvSelinuxContexts.text = ""
             }
+
+            // Denials
+            if (info.denials.isNotEmpty()) {
+                val denialText = info.denials.take(5).joinToString("\n\n") { d ->
+                    "• ${d.permission} denied\n  scontext: ${d.scontext}\n  tcontext: ${d.tcontext}"
+                }
+                binding.tvSelinuxDenials.text = "Recent Denials:\n$denialText"
+                binding.cardSelinuxDenials.visibility = View.VISIBLE
+            } else {
+                binding.cardSelinuxDenials.visibility = View.GONE
+            }
         }
 
         // Device Tree Info
@@ -185,6 +294,54 @@ class DashboardFragment : Fragment() {
             binding.tvDtCompatible.text = info.compatible
             binding.tvDtLedNode.text = info.ledNode?.substringAfterLast("/") ?: "Not found"
             binding.tvDtPinctrl.text = info.ledPinctrl ?: "Not found"
+
+            // Overlays
+            if (info.overlays.isNotEmpty()) {
+                val overlayText = info.overlays.joinToString("\n") { o ->
+                    val status = if (o.applied) "✅" else "❌"
+                    "• $status ${o.name}"
+                }
+                binding.tvOverlays.text = "Overlays:\n$overlayText"
+            } else {
+                binding.tvOverlays.text = "No device tree overlays found"
+            }
+
+            // LED DTS content
+            if (info.ledDtsContent != null) {
+                binding.tvLedDts.text = "DTS Content:\n${info.ledDtsContent}"
+            } else {
+                binding.tvLedDts.text = ""
+            }
+        }
+
+        // Vendor Info
+        viewModel.vendorInfo.observe(viewLifecycleOwner) { info ->
+            binding.tvVendorStatus.text = viewModel.getVendorStatusDisplay(info)
+
+            // Vendor Props
+            if (info.vendorProps.isNotEmpty()) {
+                val propsText = info.vendorProps.entries.joinToString("\n") { (k, v) ->
+                    "• $k: $v"
+                }
+                binding.tvVendorProps.text = "Vendor Props:\n$propsText"
+            } else {
+                binding.tvVendorProps.text = "No vendor props found"
+            }
+
+            // Missing vendor files
+            if (info.missingVendorFiles.isNotEmpty()) {
+                binding.tvMissingVendorFiles.text = "Missing Files:\n${info.missingVendorFiles.joinToString("\n") { "• $it" }}"
+                binding.cardMissingVendorFiles.visibility = View.VISIBLE
+            } else {
+                binding.cardMissingVendorFiles.visibility = View.GONE
+            }
+        }
+
+        // Kernel Info
+        viewModel.kernelInfo.observe(viewLifecycleOwner) { info ->
+            binding.tvKernelVersion.text = info.version.take(100)
+            binding.tvCmdline.text = info.cmdline.take(200) + if (info.cmdline.length > 200) "..." else ""
+            binding.tvInitramfs.text = "Initramfs: ${info.initramfsType}"
         }
 
         // Loading state
@@ -206,7 +363,9 @@ class DashboardFragment : Fragment() {
             viewModel.halInfo.observe(viewLifecycleOwner) { halInfo ->
                 viewModel.driverInfo.observe(viewLifecycleOwner) { driverInfo ->
                     viewModel.selinuxInfo.observe(viewLifecycleOwner) { selinuxInfo ->
-                        generateRecommendations(ledInfo, halInfo, driverInfo, selinuxInfo)
+                        viewModel.vendorInfo.observe(viewLifecycleOwner) { vendorInfo ->
+                            generateRecommendations(ledInfo, halInfo, driverInfo, selinuxInfo, vendorInfo)
+                        }
                     }
                 }
             }
@@ -222,7 +381,8 @@ class DashboardFragment : Fragment() {
         ledInfo: SystemInfoReader.LEDInfo,
         halInfo: SystemInfoReader.HALInfo,
         driverInfo: SystemInfoReader.DriverInfo,
-        selinuxInfo: SystemInfoReader.SELinuxInfo
+        selinuxInfo: SystemInfoReader.SELinuxInfo,
+        vendorInfo: SystemInfoReader.VendorInfo
     ) {
         val recommendations = mutableListOf<String>()
 
@@ -231,12 +391,23 @@ class DashboardFragment : Fragment() {
             recommendations.add("• This device has White LED hardware only - RGB is not supported")
         }
 
+        // Check I2C devices
+        if (ledInfo.i2cDevices.isEmpty()) {
+            recommendations.add("• No LED I2C devices detected - check I2C bus or driver")
+        }
+
         // Check HAL
         if (!halInfo.lightHal.running) {
             recommendations.add("• Light HAL not running - check init.rc configuration")
         }
         if (!halInfo.transsionHal.running) {
             recommendations.add("• Transsion HAL not running - may need vendor HAL implementation")
+        }
+
+        // Check HIDL
+        val missingHidl = halInfo.hidlInterfaces.filter { !it.available }
+        if (missingHidl.isNotEmpty()) {
+            recommendations.add("• Missing HIDL interfaces: ${missingHidl.joinToString { it.name }}")
         }
 
         // Check drivers
@@ -250,6 +421,17 @@ class DashboardFragment : Fragment() {
         // Check SELinux
         if (selinuxInfo.mode.equals("Enforcing", ignoreCase = true)) {
             recommendations.add("• SELinux is Enforcing - may block LED access. Try: setenforce 0")
+        }
+        if (selinuxInfo.denials.isNotEmpty()) {
+            recommendations.add("• SELinux denials detected - check dmesg for details")
+        }
+
+        // Check vendor partition
+        if (!vendorInfo.vendorPartitionMounted) {
+            recommendations.add("• Vendor partition not mounted - LED won't work on custom ROM")
+        }
+        if (vendorInfo.missingVendorFiles.isNotEmpty()) {
+            recommendations.add("• Missing vendor files: ${vendorInfo.missingVendorFiles.size} files")
         }
 
         if (recommendations.isNotEmpty()) {
@@ -278,7 +460,8 @@ class DashboardFragment : Fragment() {
 
             FileWriter(file).use { writer ->
                 writer.write("=== RGB Back Cover Debug Report ===\n")
-                writer.write("Generated: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n\n")
+                writer.write("Generated: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n")
+                writer.write("App Version: Mechanical Wave Tester v1.1\n\n")
 
                 // Device Info
                 viewModel.deviceInfo.value?.let { info ->
@@ -289,7 +472,11 @@ class DashboardFragment : Fragment() {
                     writer.write("Build Type: ${info.buildType}\n")
                     writer.write("ROM Type: ${info.romType}\n")
                     writer.write("Kernel: ${info.kernelVersion}\n")
-                    writer.write("Build ID: ${info.buildId}\n\n")
+                    writer.write("Build ID: ${info.buildId}\n")
+                    writer.write("Fingerprint: ${info.buildFingerprint}\n")
+                    writer.write("Vendor Fingerprint: ${info.vendorFingerprint}\n")
+                    writer.write("OTA Version: ${info.otaVersion}\n")
+                    writer.write("Stock Props Match: ${info.stockPropsMatch}\n\n")
                 }
 
                 // LED Info
@@ -300,7 +487,8 @@ class DashboardFragment : Fragment() {
                     writer.write("LED Type: ${info.ledType}\n")
                     writer.write("Controller: ${info.controller}\n")
                     writer.write("RGB Driver: ${info.rgbDriver}\n")
-                    writer.write("PDLC Controller: ${info.pdlcController}\n\n")
+                    writer.write("PDLC Controller: ${info.pdlcController}\n")
+                    writer.write("Power State: ${info.powerState}\n\n")
 
                     writer.write("I2C Devices:\n")
                     info.i2cDevices.forEach { device ->
@@ -309,6 +497,10 @@ class DashboardFragment : Fragment() {
                     writer.write("\nSysfs Paths:\n")
                     info.sysfsPaths.forEach { path ->
                         writer.write("  - $path\n")
+                    }
+                    writer.write("\nLED Attributes:\n")
+                    info.ledAttributes.forEach { (k, v) ->
+                        writer.write("  $k: $v\n")
                     }
                     writer.write("\n")
                 }
@@ -320,30 +512,51 @@ class DashboardFragment : Fragment() {
                         writer.write("  ${service.name}: ${service.status} ${service.pid?.let { "(PID: $it)" } ?: ""}\n")
                     }
                     writer.write("\nRC Files:\n")
-                    info.rcFilesFound.forEach { file ->
-                        writer.write("  - $file\n")
+                    info.rcFilesFound.forEach { rcFile ->
+                        writer.write("  - ${rcFile.path}\n")
+                        writer.write("    Content: ${rcFile.content.take(200)}...\n")
                     }
-                    writer.write("\n")
+                    writer.write("\nAnalysis: ${info.serviceAnalysis}\n\n")
                 }
 
                 // HAL Info
                 viewModel.halInfo.value?.let { info ->
                     writer.write("--- HAL Services ---\n")
-                    writer.write("Light HAL: ${if (info.lightHal.running) "Running" else "Not running"}\n")
+                    writer.write("Light HAL: ${if (info.lightHal.running) "Running (PID: ${info.lightHal.pid})" else "Not running"}\n")
                     writer.write("Vibrator HAL: ${if (info.vibratorHal.running) "Running" else "Not running"}\n")
-                    writer.write("Transsion HAL: ${if (info.transsionHal.running) "Running" else "Not running"}\n\n")
+                    writer.write("Transsion HAL: ${if (info.transsionHal.running) "Running (PID: ${info.transsionHal.pid})" else "Not running"}\n\n")
+
+                    writer.write("HIDL Interfaces:\n")
+                    info.hidlInterfaces.forEach { iface ->
+                        writer.write("  ${if (iface.available) "✅" else "❌"} ${iface.name} v${iface.version}\n")
+                    }
+                    writer.write("\nAIDL Interfaces:\n")
+                    info.aidlInterfaces.forEach { iface ->
+                        writer.write("  ${if (iface.available) "✅" else "❌"} ${iface.name}\n")
+                    }
+                    writer.write("\n")
                 }
 
                 // Drivers
                 viewModel.driverInfo.value?.let { info ->
                     writer.write("--- Kernel Drivers ---\n")
-                    writer.write("HK32F0301: ${if (info.hk32Driver.loaded) "Loaded" else "Not loaded"}\n")
-                    writer.write("AW20144: ${if (info.aw20144Driver.loaded) "Loaded" else "Not loaded"}\n")
-                    writer.write("AW862 PDLC: ${if (info.aw862Driver.loaded) "Loaded" else "Not loaded"}\n\n")
+                    writer.write("HK32F0301: ${if (info.hk32Driver.loaded) "Loaded (${info.hk32Driver.initstate})" else "Not loaded"}\n")
+                    writer.write("AW20144: ${if (info.aw20144Driver.loaded) "Loaded (${info.aw20144Driver.initstate})" else "Not loaded"}\n")
+                    writer.write("AW862 PDLC: ${if (info.aw862Driver.loaded) "Loaded" else "Not loaded"}\n")
+                    writer.write("GPIO Status: ${info.gpioStatus}\n")
+                    writer.write("I2C Status: ${info.i2cStatus}\n\n")
 
                     writer.write("Loaded Modules:\n")
                     info.modules.forEach { mod ->
-                        writer.write("  - ${mod.name} (${mod.size} bytes)\n")
+                        writer.write("  - ${mod.name} (${mod.size} bytes) [${mod.state}]\n")
+                    }
+                    writer.write("\nKernel Config:\n")
+                    info.kernelConfig.forEach { (k, v) ->
+                        writer.write("  $k=$v\n")
+                    }
+                    writer.write("\nCmdline Params:\n")
+                    info.cmdlineParams.forEach { (k, v) ->
+                        writer.write("  $k=$v\n")
                     }
                     writer.write("\n")
                 }
@@ -352,7 +565,12 @@ class DashboardFragment : Fragment() {
                 viewModel.librariesInfo.value?.let { info ->
                     writer.write("--- Shared Libraries ---\n")
                     info.ledLibsFound.forEach { lib ->
-                        writer.write("  - ${lib.name}\n    Path: ${lib.path}\n")
+                        writer.write("  - ${lib.name}\n    Path: ${lib.path}\n    Size: ${lib.size}\n")
+                    }
+                    writer.write("\nVendor Partition: ${info.vendorPartitionStatus}\n")
+                    writer.write("\nMissing Libraries:\n")
+                    info.missingLibs.forEach { lib ->
+                        writer.write("  - $lib\n")
                     }
                     writer.write("\n")
                 }
@@ -361,7 +579,22 @@ class DashboardFragment : Fragment() {
                 viewModel.selinuxInfo.value?.let { info ->
                     writer.write("--- SELinux ---\n")
                     writer.write("Mode: ${info.mode}\n")
-                    writer.write("Policy Version: ${info.policyVersion}\n\n")
+                    writer.write("Policy Version: ${info.policyVersion}\n")
+                    writer.write("Policy File Exists: ${info.policyFileExists}\n\n")
+
+                    writer.write("Booleans:\n")
+                    info.booleans.forEach { (k, v) ->
+                        writer.write("  $k: ${if (v) "on" else "off"}\n")
+                    }
+                    writer.write("\nContexts:\n")
+                    info.ledRelatedContexts.forEach { ctx ->
+                        writer.write("  $ctx\n")
+                    }
+                    writer.write("\nRecent Denials:\n")
+                    info.denials.forEach { denial ->
+                        writer.write("  - ${denial.permission}: scontext=${denial.scontext}, tcontext=${denial.tcontext}, tclass=${denial.tclass}\n")
+                    }
+                    writer.write("\n")
                 }
 
                 // Device Tree
@@ -371,6 +604,40 @@ class DashboardFragment : Fragment() {
                     writer.write("Model: ${info.model}\n")
                     writer.write("LED Node: ${info.ledNode ?: "Not found"}\n")
                     writer.write("Pinctrl: ${info.ledPinctrl ?: "Not found"}\n\n")
+
+                    writer.write("Overlays:\n")
+                    info.overlays.forEach { overlay ->
+                        writer.write("  ${if (overlay.applied) "✅" else "❌"} ${overlay.name}\n")
+                    }
+                    writer.write("\nLED DTS Content:\n${info.ledDtsContent ?: "N/A"}\n\n")
+                }
+
+                // Vendor Info
+                viewModel.vendorInfo.value?.let { info ->
+                    writer.write("--- Vendor Information ---\n")
+                    writer.write("Vendor Mounted: ${info.vendorPartitionMounted}\n")
+                    writer.write("Vendor Type: ${info.vendorPartitionType}\n")
+                    writer.write("ODM Mounted: ${info.odmPartitionMounted}\n")
+                    writer.write("Product Mounted: ${info.productPartitionMounted}\n\n")
+
+                    writer.write("Vendor Props:\n")
+                    info.vendorProps.forEach { (k, v) ->
+                        writer.write("  $k: $v\n")
+                    }
+                    writer.write("\nMissing Vendor Files:\n")
+                    info.missingVendorFiles.forEach { file ->
+                        writer.write("  - $file\n")
+                    }
+                    writer.write("\n")
+                }
+
+                // Kernel Info
+                viewModel.kernelInfo.value?.let { info ->
+                    writer.write("--- Kernel Information ---\n")
+                    writer.write("Version: ${info.version}\n")
+                    writer.write("Initramfs Type: ${info.initramfsType}\n")
+                    writer.write("Modules Loaded: ${info.modulesLoaded}\n")
+                    writer.write("\nCmdline:\n${info.cmdline}\n\n")
                 }
 
                 // Recommendations
