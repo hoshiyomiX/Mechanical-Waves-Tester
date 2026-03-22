@@ -38,7 +38,7 @@
     <!-- Chip Style -->
     <style name="Widget.App.Chip" parent="Widget.MaterialComponents.Chip.Choice">
         <item name="chipBackgroundColor">@color/chip_selector</item>
-        <item name="chipTextColor">@color/textPrimary</item>
+        <item name="android:textColor">@color/textPrimary</item>
         <item name="chipMinHeight">36dp</item>
         <item name="textStartPadding">12dp</item>
         <item name="textEndPadding">12dp</item>
