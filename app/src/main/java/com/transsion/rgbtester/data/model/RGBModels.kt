@@ -64,6 +64,11 @@ data class RGBColor(
         }
 
         /**
+         * Create from Int (alias for fromColor)
+         */
+        fun fromInt(color: Int): RGBColor = fromColor(color)
+
+        /**
          * Create from hex string
          */
         fun fromHex(hex: String): RGBColor? {

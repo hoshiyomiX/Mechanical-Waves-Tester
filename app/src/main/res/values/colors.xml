@@ -20,6 +20,8 @@
     <color name="statusWarning">#FF9800</color>
     <color name="statusError">#F44336</color>
     <color name="statusInfo">#2196F3</color>
+    <color name="colorSuccess">#4CAF50</color>
+    <color name="colorWarning">#FF9800</color>
 
     <!-- RGB Preset Colors -->
     <color name="ledRed">#FF0000</color>
