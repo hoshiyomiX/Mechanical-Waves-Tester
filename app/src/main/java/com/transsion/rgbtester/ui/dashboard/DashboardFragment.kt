@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.transsion.rgbtester.R
+import com.transsion.rgbtester.data.local.SystemInfoReader
 import com.transsion.rgbtester.databinding.FragmentDashboardBinding
 import java.io.File
 import java.io.FileWriter
